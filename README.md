@@ -7,6 +7,10 @@
 
 Connect Claude Desktop, Cursor, or any MCP-compatible AI tool to SolanaProx — pay per request using USDC or SOL directly from your Phantom wallet.
 
+<a href="https://glama.ai/mcp/servers/solanaprox/mcp-server">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/solanaprox/mcp-server/badge" alt="solanaprox-mcp MCP server" />
+</a>
+
 ---
 
 ## What is SolanaProx?
