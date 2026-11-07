@@ -48,7 +48,7 @@ Add the same block to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (per p
 ### Claude Code
 
 ```bash
-claude mcp add solanaprox -e SOLANAPROX_TOKEN=solx_your_token_here -- npx -y solanaprox-mcp
+claude mcp add solanaprox -e SOLANAPROX_TOKEN=solx_your_token_here -- npx -y solanaprox-mcp@2.0.0
 ```
 
 ## Environment variables

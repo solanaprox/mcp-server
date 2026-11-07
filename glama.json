@@ -1,1 +1,7 @@
-{"$schema":"https://glama.ai/mcp/schemas/server.json","maintainers":["solanaprox"]}
+{
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "maintainers": [
+    "solanaprox",
+    "unixlamadev-spec"
+  ]
+}
