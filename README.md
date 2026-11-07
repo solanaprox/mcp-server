@@ -1,238 +1,100 @@
-# SolanaProx MCP Server
+# solanaprox-mcp
 
-> Pay for AI inference with Solana. No API keys. Your wallet is your identity.
+MCP server for [SolanaProx](https://solanaprox.com): pay-per-call AI paid in USDC on Solana, for Claude Desktop, Cursor, Claude Code and other MCP clients.
 
-[![npm version](https://badge.fury.io/js/solanaprox-mcp.svg)](https://www.npmjs.com/package/solanaprox-mcp)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+- **Signed wallet auth.** You sign in with your wallet once and give the server a `solx_` token. A wallet address is not a credential.
+- **Live prices** from the API, credited back to actual usage after each call.
+- **Failed or empty calls are never charged.**
+- **Balances never expire.** USDC on Solana only, with no withdrawals.
+- **No tool sends funds.** The server holds no wallet and no key.
+- Tool / function calling passthrough. Pure Node.js 18 or newer, with no build step.
 
-Connect Claude Desktop, Cursor, or any MCP-compatible AI tool to SolanaProx — pay per request using USDC or SOL directly from your Phantom wallet.
+> **Upgrading from 1.x?** Version 1.x sent a wallet address, which SolanaProx now refuses. Sign in to get a token, replace `SOLANA_WALLET` with `SOLANAPROX_TOKEN`, and restart your client. Your balance is safe and appears after sign-in.
 
----
+## Get a token
 
-## What is SolanaProx?
+1. Sign in at [solanaprox.com/signin](https://solanaprox.com/signin) with Phantom or Solflare. Signing moves no funds.
+2. **Choose a low daily spend cap for agents.** The token is the agent's budget, and it never needs your wallet's key.
+3. Copy the `solx_` token. It's shown once.
 
-SolanaProx is an AI API gateway where your **Phantom wallet is your account**. Deposit USDC or SOL, make AI requests, pay per use. No signups. No subscriptions. No API key management.
+## Setup
 
+### Claude Desktop
+
+Edit `claude_desktop_config.json`:
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "solanaprox": {
+      "command": "npx",
+      "args": ["-y", "solanaprox-mcp"],
+      "env": {
+        "SOLANAPROX_TOKEN": "solx_your_token_here"
+      }
+    }
+  }
+}
 ```
-Your Phantom Wallet → SolanaProx → Claude / GPT-4
-       ↑                                    ↓
-   USDC balance                        AI response
-```
 
----
+Restart Claude Desktop afterwards.
 
-## Quick Start
+### Cursor
 
-### 1. Install the MCP server
+Add the same block to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (per project).
+
+### Claude Code
 
 ```bash
-npx solanaprox-mcp
+claude mcp add solanaprox -e SOLANAPROX_TOKEN=solx_your_token_here -- npx -y solanaprox-mcp
 ```
 
-### 2. Add to Claude Desktop
+## Environment variables
 
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "solanaprox": {
-      "command": "npx",
-      "args": ["solanaprox-mcp"],
-      "env": {
-        "SOLANA_WALLET": "YOUR_PHANTOM_WALLET_ADDRESS"
-      }
-    }
-  }
-}
-```
-
-### 3. Add to Cursor
-
-Edit `~/.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "solanaprox": {
-      "command": "npx",
-      "args": ["solanaprox-mcp"],
-      "env": {
-        "SOLANA_WALLET": "YOUR_PHANTOM_WALLET_ADDRESS"
-      }
-    }
-  }
-}
-```
-
-### 4. Deposit USDC
-
-Visit [solanaprox.com](https://solanaprox.com), connect your Phantom wallet, and deposit USDC or SOL.
-
-That's it. Claude can now make AI requests that pay automatically from your balance.
-
----
+| Variable | Required | Default | Purpose |
+|----------|----------|---------|---------|
+| `SOLANAPROX_TOKEN` | For paid and account tools | none | Your `solx_` token, sent as a bearer header. The server never prints it. |
+| `SOLANAPROX_URL` | no | `https://solanaprox.com` | API base URL. Must be HTTPS, except on this machine. |
 
 ## Tools
 
-### `ask_ai`
-Send a prompt to Claude or GPT-4. Cost deducted automatically from wallet balance.
+| Tool | Cost | Needs a token | What it does |
+|------|------|---------------|--------------|
+| `ask_ai` | **Paid** | Yes | Sends `messages` to `model` (`POST /v1/messages`), with optional `max_tokens`, `system`, `tools` and `tool_choice`. Returns the reply, any tool calls and the remaining balance. |
+| `list_models` | Free | No | Lists the models served now, with live prices and tool support (`GET /v1/models`). |
+| `check_balance` | Free | Yes | Shows the balance, today's spend against the token's cap, its expiry and claimable deposits (`GET /v1/balance`). |
+| `deposit_info` | Free | No | Shows the deposit address, USDC account and rules. With `amount_usd`, creates a deposit intent for exchange users (`POST /v1/deposit/intent`). It never sends funds. |
+| `get_activity` | Free | Yes | Shows recent usage and credits (`GET /v1/account/activity`). |
 
-```
-Input:
-  prompt      (required) — your question or task
-  model       (optional) — claude-sonnet-4-20250514 (default) | gpt-4-turbo
-  max_tokens  (optional) — 1-4096, default 1024
-  system      (optional) — system prompt for context
-```
+**What `ask_ai` costs:** the price comes from `list_models`. A call is quoted from the input size and `max_tokens`, then credited back to actual usage. Failed or empty calls are never charged. **An agent must confirm the cost with the user first.**
 
-### `check_balance`
-Check your current USDC/SOL balance on SolanaProx.
+## Deposits
 
-```
-Input:
-  wallet  (optional) — defaults to configured SOLANA_WALLET
-```
+USDC on Solana only, with a 0.10 USDC minimum and no withdrawals. Balances never expire.
 
-### `estimate_cost`
-Estimate request cost before making it.
+- **From your own wallet:** send before or after signing in. Earlier deposits are claimed automatically when you sign in.
+- **From an exchange:** an exchange sends from its own wallet, so ask for an exact amount (`deposit_info` with `amount_usd`), valid for 1 hour. **Exchange fees can change the amount:** the amount that arrives must match to the last digit. Save the token it returns, since it's shown once and can't be recovered.
 
-```
-Input:
-  prompt      (required)
-  model       (optional)
-  max_tokens  (optional)
-```
+If you sent USDC to SolanaProx on Oct 29, 2026 and were not credited, contact support@solanaprox.com with your exchange withdrawal record.
 
-### `list_models`
-List all available models and pricing.
+## Errors
 
----
+Errors are plain messages that say what to do next: sign in, deposit, pick another model, or wait. Nothing is charged when a request is refused or fails.
 
-## Pricing
-
-| Model | Input | Output |
-|-------|-------|--------|
-| Claude Sonnet 4 | $3.60/1M tokens | $18.00/1M tokens |
-| GPT-4 Turbo | $12.00/1M tokens | $36.00/1M tokens |
-
-Cached responses receive a **50% discount**.
-
-Typical request costs:
-- Short question/answer: ~$0.001–0.003
-- Code review (500 lines): ~$0.01–0.03  
-- Long document analysis: ~$0.05–0.15
-
----
-
-## Use Cases
-
-### Personal AI assistant with micropayments
-Pay only for what you use. No $20/month subscription burning while you sleep.
-
-### Autonomous AI agents
-AI agents that pay for their own inference — no hardcoded API keys, no human in the loop.
-
-```js
-// Agent pays autonomously on every request
-const res = await fetch("https://solanaprox.com/v1/messages", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "X-Wallet-Address": process.env.SOLANA_WALLET,
-  },
-  body: JSON.stringify({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 1024,
-    messages: [{ role: "user", content: prompt }],
-  }),
-});
-```
-
-### Solana app integration
-Let your app's users pay for AI features directly from their Phantom wallet. No backend payment processing required.
-
----
-
-## Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `SOLANA_WALLET` | ✅ | Your Phantom wallet address |
-| `SOLANAPROX_URL` | ❌ | Override API URL (default: https://solanaprox.com) |
-
----
-
-## Standalone Agent Example
+## Development
 
 ```bash
-git clone https://github.com/solanaprox/mcp-server
-cd mcp-server
 npm install
-
-# Run the research agent
-SOLANA_WALLET=your_wallet node agent-example.js research "Solana DeFi trends 2026"
-
-# Check balance
-SOLANA_WALLET=your_wallet node agent-example.js balance
-
-# Quick demo
-SOLANA_WALLET=your_wallet node agent-example.js
+npm test          # unit tests with a mocked HTTP layer
+npm run smoke     # live checks against solanaprox.com, free calls only
+node agent-example.js
 ```
-
----
-
-## Integration Examples
-
-### LangChain (Python)
-Coming soon — or use the REST API directly.
-
-### Direct REST API
-
-```bash
-# Check balance
-curl https://solanaprox.com/api/balance/YOUR_WALLET
-
-# Make AI request
-curl -X POST https://solanaprox.com/v1/messages \
-  -H "Content-Type: application/json" \
-  -H "X-Wallet-Address: YOUR_WALLET" \
-  -d '{
-    "model": "claude-sonnet-4-20250514",
-    "max_tokens": 1024,
-    "messages": [{"role": "user", "content": "Hello!"}]
-  }'
-```
-
----
-
-## Security
-
-- Your wallet address is used as an identifier — it's public by design on Solana
-- Private keys never leave your wallet
-- SolanaProx only reads incoming transactions to your deposit address
-- Rate limiting and spend limits protect against runaway costs
-- All transactions verifiable on [Solscan](https://solscan.io)
-
----
 
 ## Links
 
-- 🌐 [solanaprox.com](https://solanaprox.com)
-- 📖 [API Docs](https://solanaprox.com/docs)
-- 🐦 [Twitter/X](https://twitter.com/solanaprox)
-- ⚡ [LightningProx](https://lightningprox.com) — same product, Bitcoin Lightning payments
+- [solanaprox.com](https://solanaprox.com) and its [docs](https://solanaprox.com/docs)
+- Support: support@solanaprox.com
 
----
-
-## Built by LPX Digital Group LLC
-
-Part of the LPX ecosystem:
-- [LightningProx](https://lightningprox.com) — AI APIs via Bitcoin Lightning
-- [SolanaProx](https://solanaprox.com) — AI APIs via Solana/USDC
-- [LPXPoly](https://lpxpoly.com) — AI-powered Polymarket analysis
-- [IsItARug](https://isitarug.com) — Solana token safety scanner
-
----
-
-MIT License
+Built by LPX Digital Group LLC. MIT licensed.

@@ -1,49 +1,51 @@
 {
   "name": "solanaprox-mcp",
-  "version": "1.0.0",
-  "description": "MCP server for SolanaProx — pay for AI inference with Solana/USDC. No API keys. Your wallet is your identity.",
-  "main": "dist/index.js",
+  "version": "2.0.0",
+  "description": "MCP server for SolanaProx: pay-per-call AI paid in USDC on Solana. Signed wallet auth, live prices, failed calls never charged, balances never expire.",
+  "type": "module",
   "bin": {
-    "solanaprox-mcp": "dist/index.js"
+    "solanaprox-mcp": "bin/solanaprox-mcp.js"
   },
+  "main": "src/server.js",
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "build": "tsc",
-    "dev": "ts-node src/index.ts",
-    "start": "node dist/index.js",
-    "prepare": "npm run build"
+    "start": "node bin/solanaprox-mcp.js",
+    "test": "node --test test/tools.test.js",
+    "smoke": "node scripts/smoke-live.js"
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
     "solana",
+    "usdc",
     "ai",
     "claude",
     "gpt",
-    "usdc",
-    "crypto",
     "payments",
-    "lightning",
-    "phantom",
-    "model-context-protocol"
+    "autonomous-agents"
   ],
   "author": "LPX Digital Group LLC",
   "license": "MIT",
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
-    "ts-node": "^10.9.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/solanaprox/mcp-server"
+    "url": "git+https://github.com/solanaprox/mcp-server.git"
   },
   "homepage": "https://solanaprox.com",
   "bugs": {
-    "url": "https://github.com/solanaprox/mcp-server/issues"
+    "url": "https://github.com/solanaprox/mcp-server/issues",
+    "email": "support@solanaprox.com"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2"
   }
 }
