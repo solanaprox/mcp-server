@@ -2,14 +2,14 @@
 
 MCP server for [SolanaProx](https://solanaprox.com): pay-per-call AI paid in USDC on Solana, for Claude Desktop, Cursor, Claude Code and other MCP clients.
 
-- **Signed wallet auth.** You sign in with your wallet once and give the server a `solx_` token. A wallet address is not a credential.
+- **Signed wallet auth.** You sign in with your wallet once and give the server a `solx_` token.
 - **Live prices** from the API, credited back to actual usage after each call.
-- **Failed or empty calls are never charged.**
+- **You only pay for successful calls.**
 - **Balances never expire.** USDC on Solana only, with no withdrawals.
 - **No tool sends funds.** The server holds no wallet and no key.
 - Tool / function calling passthrough. Pure Node.js 18 or newer, with no build step.
 
-> **Upgrading from 1.x?** Version 1.x sent a wallet address, which SolanaProx now refuses. Sign in to get a token, replace `SOLANA_WALLET` with `SOLANAPROX_TOKEN`, and restart your client. Your balance is safe and appears after sign-in.
+> **Upgrading from 1.x?** Sign in at [solanaprox.com/signin](https://solanaprox.com/signin), replace `SOLANA_WALLET` with `SOLANAPROX_TOKEN`, and restart your client. Your balance carries over.
 
 ## Get a token
 
@@ -68,7 +68,7 @@ claude mcp add solanaprox -e SOLANAPROX_TOKEN=solx_your_token_here -- npx -y sol
 | `deposit_info` | Free | No | Shows the deposit address, USDC account and rules. With `amount_usd`, creates a deposit intent for exchange users (`POST /v1/deposit/intent`). It never sends funds. |
 | `get_activity` | Free | Yes | Shows recent usage and credits (`GET /v1/account/activity`). |
 
-**What `ask_ai` costs:** the price comes from `list_models`. A call is quoted from the input size and `max_tokens`, then credited back to actual usage. Failed or empty calls are never charged. **An agent must confirm the cost with the user first.**
+**What `ask_ai` costs:** the price comes from `list_models`. A call is quoted from the input size and `max_tokens`, then credited back to actual usage. You only pay for successful calls. **An agent must confirm the cost with the user first.**
 
 ## Deposits
 
